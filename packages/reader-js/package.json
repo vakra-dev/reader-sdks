@@ -1,0 +1,42 @@
+{
+  "name": "@vakra-dev/reader-js",
+  "version": "0.2.0",
+  "description": "JavaScript/TypeScript SDK for the Reader API",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "reader",
+    "scraper",
+    "web-scraping",
+    "markdown",
+    "llm",
+    "sdk"
+  ],
+  "author": "Vakra Dev",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.0"
+  }
+}

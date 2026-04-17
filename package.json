@@ -1,0 +1,7 @@
+{
+  "name": "reader-sdks",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

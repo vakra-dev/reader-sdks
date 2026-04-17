@@ -1,0 +1,37 @@
+export { ReaderClient } from "./client.js";
+export {
+  ReaderApiError,
+  InvalidRequestError,
+  UnauthenticatedError,
+  InsufficientCreditsError,
+  UrlBlockedError,
+  NotFoundError,
+  ConflictError,
+  RateLimitedError,
+  ConcurrencyLimitedError,
+  InternalServerError,
+  UpstreamUnavailableError,
+  ScrapeTimeoutError,
+  toReaderApiError,
+} from "./errors.js";
+export type { ReaderErrorCode, ApiErrorBody } from "./errors.js";
+export type {
+  ReaderClientConfig,
+  ReadParams,
+  ReadResult,
+  ScrapeResult,
+  ScrapeMetadata,
+  Page,
+  Job,
+  JobStatus,
+  JobMode,
+  ProxyMode,
+  Pagination,
+  Credits,
+  UsageEntry,
+  StreamEvent,
+  SuccessEnvelope,
+  PaginatedEnvelope,
+  ErrorEnvelope,
+  ApiEnvelope,
+} from "./types.js";

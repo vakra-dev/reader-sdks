@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  reader-js:
+    name: reader-js
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/reader-js
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install (monorepo root)
+        run: npm ci
+        working-directory: .
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  reader-py:
+    name: reader-py
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/reader-py
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: pip install -e .[dev]
+
+      - name: Test
+        run: pytest

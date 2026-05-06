@@ -11,6 +11,8 @@ export interface ReaderClientConfig {
   timeout?: number;
   /** Max retries on transient failures (default: 2) */
   maxRetries?: number;
+  /** Extra headers to include in every request (e.g. x-request-id for tracing) */
+  headers?: Record<string, string>;
 }
 
 /** Public proxy mode. `auto` picks standard first and escalates to stealth on block. */
@@ -75,6 +77,8 @@ export interface Page {
 /** Result of a synchronous scrape — single URL, returned immediately. */
 export interface ScrapeResult {
   url: string;
+  /** Final URL after redirects (only present if different from `url`) */
+  finalUrl?: string;
   markdown?: string;
   html?: string;
   metadata: ScrapeMetadata;
@@ -164,3 +168,28 @@ export interface ErrorEnvelope {
 }
 
 export type ApiEnvelope<T> = SuccessEnvelope<T> | ErrorEnvelope;
+
+// ─── Browser Sessions ────────────────────────────────────────────────
+
+export type SessionStatus = "active" | "stopped" | "expired";
+
+export interface SessionInfo {
+  sessionId: string;
+  wsEndpoint: string;
+  token: string;
+  status: SessionStatus;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CreateSessionParams {
+  /** Max session lifetime in ms (default: 3600000 = 60 min) */
+  maxDurationMs?: number;
+}
+
+export interface StopSessionResult {
+  sessionId: string;
+  status: "stopped";
+  durationMs: number;
+  creditsCharged: number;
+}

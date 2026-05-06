@@ -54,6 +54,7 @@ class ScrapeResult(BaseModel):
 
     kind: Literal["scrape"] = "scrape"
     url: str
+    final_url: Optional[str] = None  # Present if URL redirected
     markdown: Optional[str] = None
     html: Optional[str] = None
     metadata: ScrapeMetadata
@@ -179,3 +180,34 @@ class DoneEvent(BaseModel):
 
 
 StreamEvent = Union[ProgressEvent, PageEvent, ErrorEvent, DoneEvent]
+
+
+# ─── Browser Sessions ────────────────────────────────────────────────
+
+SessionStatus = Literal["active", "stopped", "expired"]
+
+
+class SessionInfo(BaseModel):
+    """Active browser session with a CDP WebSocket endpoint."""
+
+    session_id: str
+    ws_endpoint: str
+    token: str
+    status: SessionStatus
+    created_at: str
+    expires_at: str
+
+
+class CreateSessionParams(BaseModel):
+    """Options for creating a browser session."""
+
+    max_duration_ms: Optional[int] = None
+
+
+class StopSessionResult(BaseModel):
+    """Result from stopping a browser session."""
+
+    session_id: str
+    status: Literal["stopped"]
+    duration_ms: int
+    credits_charged: int

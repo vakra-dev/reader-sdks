@@ -37,6 +37,26 @@ if (result.kind === "scrape") {
 - **SSE streaming.** `for await (const event of client.stream(jobId))` yields real-time `progress` / `page` / `error` / `done` events.
 - **Request ID tracing.** Every error carries the `x-request-id` header value on `err.requestId` for support tickets.
 
+## Browser Sessions
+
+Launch a stealthed Chrome and connect Playwright or Puppeteer:
+
+```ts
+import { chromium } from "playwright-core";
+
+const session = await client.sessions.create();
+const browser = await chromium.connectOverCDP(session.wsEndpoint);
+const page = await (await browser.newContext()).newPage();
+
+await page.goto("https://example.com");
+console.log(await page.title());
+
+await browser.close();
+await client.sessions.stop(session.sessionId);
+```
+
+Methods: `client.sessions.create()`, `.get(id)`, `.stop(id)`, `.list()`
+
 ## Browser usage
 
 The SDK works in modern browsers via native `fetch`, but **do not ship your API key in browser code** — anyone can read and reuse it. Proxy requests through your own backend.

@@ -54,6 +54,34 @@ asyncio.run(main())
 - **Pydantic models everywhere** — all responses are parsed into typed models with IDE autocomplete.
 - **Request ID tracing.** Every error carries the `x-request-id` header value on `err.request_id` for support tickets.
 
+## Browser Sessions
+
+Launch a stealthed Chrome and connect Playwright:
+
+```python
+session = client.sessions.create()
+
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.connect_over_cdp(session.ws_endpoint)
+    page = browser.contexts[0].new_page()
+    page.goto("https://example.com")
+    print(page.title())
+    browser.close()
+
+client.sessions.stop(session.session_id)
+```
+
+Async:
+
+```python
+session = await client.sessions.create()
+# ... use async playwright ...
+await client.sessions.stop(session.session_id)
+```
+
+Methods: `client.sessions.create()`, `.get(id)`, `.stop(id)`, `.list()`
+
 ## Errors
 
 ```python

@@ -35,6 +35,8 @@ from .types import (
     ScrapeMetadata,
     ScrapeReadResult,
     ScrapeResult,
+    SessionInfo,
+    StopSessionResult,
     StreamEvent,
     UsageEntry,
     WebhookConfig,
@@ -79,4 +81,7 @@ __all__ = [
     "ErrorEvent",
     "DoneEvent",
     "WebhookConfig",
+    # Sessions
+    "SessionInfo",
+    "StopSessionResult",
 ]

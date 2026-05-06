@@ -1,0 +1,55 @@
+name: Publish SDKs
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-js:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+
+      - name: Build
+        working-directory: packages/reader-js
+        run: npm run build
+
+      - name: Publish
+        working-directory: packages/reader-js
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-py:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build
+        working-directory: packages/reader-py
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: packages/reader-py
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

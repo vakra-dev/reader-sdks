@@ -27,6 +27,8 @@ from .types import (
     ReadResult,
     ScrapeReadResult,
     ScrapeResult,
+    SessionInfo,
+    StopSessionResult,
     StreamEvent,
 )
 
@@ -76,6 +78,8 @@ class ReaderClient:
             },
             timeout=timeout,
         )
+
+        self.sessions = SessionsAPI(self._request)
 
     def read(self, **kwargs: Any) -> ReadResult:
         """Read (scrape, batch, or crawl) URLs.
@@ -312,6 +316,35 @@ class ReaderClient:
 
         assert last_error is not None
         raise last_error
+
+
+class SessionsAPI:
+    """Browser sessions API (synchronous)."""
+
+    def __init__(self, request_fn: Any):
+        self._request = request_fn
+
+    def create(self, **kwargs: Any) -> SessionInfo:
+        """Create a browser session. Returns a CDP WebSocket URL."""
+        body = _to_camel_case(kwargs) if kwargs else {}
+        envelope = self._request("POST", "/v1/sessions", json=body)
+        return SessionInfo(**_to_snake_case(envelope["data"]))
+
+    def get(self, session_id: str) -> SessionInfo:
+        """Get session status."""
+        envelope = self._request("GET", f"/v1/sessions/{session_id}")
+        return SessionInfo(**_to_snake_case(envelope["data"]))
+
+    def stop(self, session_id: str) -> StopSessionResult:
+        """Stop a browser session."""
+        envelope = self._request("DELETE", f"/v1/sessions/{session_id}")
+        return StopSessionResult(**_to_snake_case(envelope["data"]))
+
+    def list(self) -> list[SessionInfo]:
+        """List active sessions."""
+        envelope = self._request("GET", "/v1/sessions")
+        data = envelope["data"]
+        return [SessionInfo(**_to_snake_case(s)) for s in data]
 
 
 def _to_camel_case(data: dict[str, Any]) -> dict[str, Any]:

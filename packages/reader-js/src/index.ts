@@ -34,4 +34,8 @@ export type {
   PaginatedEnvelope,
   ErrorEnvelope,
   ApiEnvelope,
+  SessionInfo,
+  CreateSessionParams,
+  StopSessionResult,
+  SessionStatus,
 } from "./types.js";

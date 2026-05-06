@@ -33,6 +33,9 @@ import type {
   SuccessEnvelope,
   PaginatedEnvelope,
   ErrorEnvelope,
+  SessionInfo,
+  CreateSessionParams,
+  StopSessionResult,
 } from "./types.js";
 import {
   toReaderApiError,
@@ -57,6 +60,8 @@ export class ReaderClient {
   private baseUrl: string;
   private timeout: number;
   private maxRetries: number;
+  private extraHeaders: Record<string, string>;
+  private _sessions: SessionsAPI | null = null;
 
   constructor(config: ReaderClientConfig) {
     if (!config.apiKey) {
@@ -66,6 +71,25 @@ export class ReaderClient {
     this.baseUrl = (config.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, "");
     this.timeout = config.timeout || DEFAULT_TIMEOUT;
     this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
+    this.extraHeaders = config.headers || {};
+  }
+
+  /**
+   * Browser sessions API.
+   *
+   * @example
+   * ```typescript
+   * const session = await client.sessions.create();
+   * const browser = await chromium.connectOverCDP(session.wsEndpoint);
+   * // ... use Playwright ...
+   * await client.sessions.stop(session.sessionId);
+   * ```
+   */
+  get sessions(): SessionsAPI {
+    if (!this._sessions) {
+      this._sessions = new SessionsAPI(this.request.bind(this));
+    }
+    return this._sessions;
   }
 
   /**
@@ -289,6 +313,7 @@ export class ReaderClient {
           headers: {
             "Content-Type": "application/json",
             "x-api-key": this.apiKey,
+            ...this.extraHeaders,
           },
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
@@ -357,6 +382,60 @@ export class ReaderClient {
       lastError ??
       new ReaderApiError({ code: "internal_error", message: "Request failed" }, 500)
     );
+  }
+}
+
+// ─── Sessions API ────────────────────────────────────────────────────
+
+type RequestFn = <T>(method: string, path: string, body?: unknown) => Promise<T>;
+
+class SessionsAPI {
+  constructor(private request: RequestFn) {}
+
+  /**
+   * Create a browser session. Returns a CDP WebSocket URL for
+   * Playwright/Puppeteer connection.
+   */
+  async create(params?: CreateSessionParams): Promise<SessionInfo> {
+    const envelope = await this.request<SuccessEnvelope<SessionInfo>>(
+      "POST",
+      "/v1/sessions",
+      params ?? {},
+    );
+    return envelope.data;
+  }
+
+  /**
+   * Get session status.
+   */
+  async get(sessionId: string): Promise<SessionInfo> {
+    const envelope = await this.request<SuccessEnvelope<SessionInfo>>(
+      "GET",
+      `/v1/sessions/${sessionId}`,
+    );
+    return envelope.data;
+  }
+
+  /**
+   * Stop a browser session.
+   */
+  async stop(sessionId: string): Promise<StopSessionResult> {
+    const envelope = await this.request<SuccessEnvelope<StopSessionResult>>(
+      "DELETE",
+      `/v1/sessions/${sessionId}`,
+    );
+    return envelope.data;
+  }
+
+  /**
+   * List active sessions.
+   */
+  async list(): Promise<SessionInfo[]> {
+    const envelope = await this.request<SuccessEnvelope<SessionInfo[]>>(
+      "GET",
+      "/v1/sessions",
+    );
+    return envelope.data;
   }
 }
 

@@ -36,6 +36,8 @@ from .types import (
     ReadResult,
     ScrapeReadResult,
     ScrapeResult,
+    SessionInfo,
+    StopSessionResult,
     StreamEvent,
 )
 
@@ -77,6 +79,8 @@ class AsyncReaderClient:
             },
             timeout=timeout,
         )
+
+        self.sessions = AsyncSessionsAPI(self._request)
 
     async def read(self, **kwargs: Any) -> ReadResult:
         """Read (scrape, batch, or crawl) URLs."""
@@ -338,3 +342,32 @@ async def _parse_async_sse_stream(
             current_event = line[len("event:") :].strip()
         elif line.startswith("data:"):
             current_data.append(line[len("data:") :].strip())
+
+
+class AsyncSessionsAPI:
+    """Browser sessions API (async)."""
+
+    def __init__(self, request_fn: Any):
+        self._request = request_fn
+
+    async def create(self, **kwargs: Any) -> SessionInfo:
+        """Create a browser session. Returns a CDP WebSocket URL."""
+        body = _to_camel_case(kwargs) if kwargs else {}
+        envelope = await self._request("POST", "/v1/sessions", json=body)
+        return SessionInfo(**_to_snake_case(envelope["data"]))
+
+    async def get(self, session_id: str) -> SessionInfo:
+        """Get session status."""
+        envelope = await self._request("GET", f"/v1/sessions/{session_id}")
+        return SessionInfo(**_to_snake_case(envelope["data"]))
+
+    async def stop(self, session_id: str) -> StopSessionResult:
+        """Stop a browser session."""
+        envelope = await self._request("DELETE", f"/v1/sessions/{session_id}")
+        return StopSessionResult(**_to_snake_case(envelope["data"]))
+
+    async def list(self) -> list[SessionInfo]:
+        """List active sessions."""
+        envelope = await self._request("GET", "/v1/sessions")
+        data = envelope["data"]
+        return [SessionInfo(**_to_snake_case(s)) for s in data]

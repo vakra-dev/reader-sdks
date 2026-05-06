@@ -41,6 +41,30 @@ if result.kind == "scrape":
 
 `client.read(...)` returns a discriminated union — single-URL requests resolve to a `ScrapeReadResult` synchronously, batch and crawl requests resolve to a `JobReadResult` after the SDK polls the job to completion.
 
+## Browser Sessions
+
+Both SDKs support browser sessions — launch a stealthed Chrome and connect Playwright/Puppeteer:
+
+### JavaScript
+
+```ts
+const session = await client.sessions.create();
+const browser = await chromium.connectOverCDP(session.wsEndpoint);
+// ... use Playwright ...
+await client.sessions.stop(session.sessionId);
+```
+
+### Python
+
+```python
+session = client.sessions.create()
+browser = playwright.chromium.connect_over_cdp(session.ws_endpoint)
+# ... use Playwright ...
+client.sessions.stop(session.session_id)
+```
+
+See `client.sessions.create()`, `.get()`, `.stop()`, `.list()` in both SDKs.
+
 ## Features (both SDKs)
 
 - **Discriminated `ReadResult`** — `kind: "scrape" | "job"` narrows `data` to the concrete type for IDE autocomplete and type checkers

@@ -20,9 +20,9 @@ Both packages stay at matching major.minor versions so the surface is identical 
 ```ts
 import { ReaderClient } from "@vakra-dev/reader-js";
 
-const client = new ReaderClient({ apiKey: process.env.READER_KEY! });
+const reader = new ReaderClient({ apiKey: process.env.READER_KEY! });
 
-const result = await client.read({ url: "https://example.com" });
+const result = await reader.read({ url: "https://example.com" });
 if (result.kind === "scrape") {
   console.log(result.data.markdown);
 }
@@ -33,13 +33,13 @@ if (result.kind === "scrape") {
 ```python
 from reader_py import ReaderClient
 
-client = ReaderClient(api_key="rdr_your_key")
-result = client.read(url="https://example.com")
+reader = ReaderClient(api_key="rdr_your_key")
+result = reader.read(url="https://example.com")
 if result.kind == "scrape":
     print(result.data.markdown)
 ```
 
-`client.read(...)` returns a discriminated union — single-URL requests resolve to a `ScrapeReadResult` synchronously, batch and crawl requests resolve to a `JobReadResult` after the SDK polls the job to completion.
+`reader.read(...)` returns a discriminated union — single-URL requests resolve to a `ScrapeReadResult` synchronously, batch and crawl requests resolve to a `JobReadResult` after the SDK polls the job to completion.
 
 ## Browser Sessions
 
@@ -48,22 +48,22 @@ Both SDKs support browser sessions — launch a stealthed Chrome and connect Pla
 ### JavaScript
 
 ```ts
-const session = await client.sessions.create();
+const session = await reader.sessions.create();
 const browser = await chromium.connectOverCDP(session.wsEndpoint);
 // ... use Playwright ...
-await client.sessions.stop(session.sessionId);
+await reader.sessions.stop(session.sessionId);
 ```
 
 ### Python
 
 ```python
-session = client.sessions.create()
+session = reader.sessions.create()
 browser = playwright.chromium.connect_over_cdp(session.ws_endpoint)
 # ... use Playwright ...
-client.sessions.stop(session.session_id)
+reader.sessions.stop(session.session_id)
 ```
 
-See `client.sessions.create()`, `.get()`, `.stop()`, `.list()` in both SDKs.
+See `reader.sessions.create()`, `.get()`, `.stop()`, `.list()` in both SDKs.
 
 ## Features (both SDKs)
 
@@ -71,7 +71,7 @@ See `client.sessions.create()`, `.get()`, `.stop()`, `.list()` in both SDKs.
 - **Typed error classes** for every Reader error code (`InsufficientCreditsError`, `RateLimitedError`, `UrlBlockedError`, `ScrapeTimeoutError`, `ConcurrencyLimitedError`, etc.) — each exposes the relevant detail fields
 - **Automatic retries with exponential backoff** for 5xx and 429 responses; honours the `Retry-After` header on rate-limit errors
 - **Pagination-aware job collection** — `wait_for_job` / `waitForJob` returns the full result set across all pages
-- **SSE streaming** — `client.stream(jobId)` yields `progress` / `page` / `error` / `done` events as the job runs
+- **SSE streaming** — `reader.stream(jobId)` yields `progress` / `page` / `error` / `done` events as the job runs
 - **Request ID tracing** — every error carries the `x-request-id` header on `err.request_id` / `err.requestId` for support tickets
 
 Python adds a parallel `AsyncReaderClient` backed by `httpx.AsyncClient` with the same method surface.

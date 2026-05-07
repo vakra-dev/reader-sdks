@@ -16,9 +16,9 @@ pip install reader-py
 import os
 from reader_py import ReaderClient
 
-client = ReaderClient(api_key=os.environ["READER_KEY"])
+reader = ReaderClient(api_key=os.environ["READER_KEY"])
 
-result = client.read(url="https://example.com")
+result = reader.read(url="https://example.com")
 if result.kind == "scrape":
     print(result.data.markdown)
 ```
@@ -31,15 +31,15 @@ import os
 from reader_py import AsyncReaderClient
 
 async def main():
-    async with AsyncReaderClient(api_key=os.environ["READER_KEY"]) as client:
-        result = await client.read(url="https://example.com")
+    async with AsyncReaderClient(api_key=os.environ["READER_KEY"]) as reader:
+        result = await reader.read(url="https://example.com")
         if result.kind == "scrape":
             print(result.data.markdown)
 
 asyncio.run(main())
 ```
 
-`client.read(...)` returns a discriminated union (Pydantic):
+`reader.read(...)` returns a discriminated union (Pydantic):
 
 - `ScrapeReadResult(kind="scrape", data=ScrapeResult)` — single-URL requests, returned immediately
 - `JobReadResult(kind="job", data=Job)` — batch and crawl requests, auto-polled to completion
@@ -50,7 +50,7 @@ asyncio.run(main())
 - **Typed errors for all 11 Reader error codes.** `InsufficientCreditsError`, `RateLimitedError`, `UrlBlockedError`, `ScrapeTimeoutError`, and more. Each subclass exposes the relevant fields (e.g. `err.required`, `err.retry_after_seconds`).
 - **Automatic retries with exponential backoff** for transient codes. Honors the `Retry-After` header on 429.
 - **Pagination-aware job collection.** `wait_for_job()` returns the full job with every page result.
-- **SSE streaming.** `for event in client.stream(job_id)` (sync) or `async for` (async) yields `ProgressEvent` / `PageEvent` / `ErrorEvent` / `DoneEvent`.
+- **SSE streaming.** `for event in reader.stream(job_id)` (sync) or `async for` (async) yields `ProgressEvent` / `PageEvent` / `ErrorEvent` / `DoneEvent`.
 - **Pydantic models everywhere** — all responses are parsed into typed models with IDE autocomplete.
 - **Request ID tracing.** Every error carries the `x-request-id` header value on `err.request_id` for support tickets.
 
@@ -59,7 +59,7 @@ asyncio.run(main())
 Launch a stealthed Chrome and connect Playwright:
 
 ```python
-session = client.sessions.create()
+session = reader.sessions.create()
 
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
@@ -69,18 +69,18 @@ with sync_playwright() as p:
     print(page.title())
     browser.close()
 
-client.sessions.stop(session.session_id)
+reader.sessions.stop(session.session_id)
 ```
 
 Async:
 
 ```python
-session = await client.sessions.create()
+session = await reader.sessions.create()
 # ... use async playwright ...
-await client.sessions.stop(session.session_id)
+await reader.sessions.stop(session.session_id)
 ```
 
-Methods: `client.sessions.create()`, `.get(id)`, `.stop(id)`, `.list()`
+Methods: `reader.sessions.create()`, `.get(id)`, `.stop(id)`, `.list()`
 
 ## Errors
 
@@ -93,7 +93,7 @@ from reader_py import (
 )
 
 try:
-    client.read(url=url)
+    reader.read(url=url)
 except InsufficientCreditsError as err:
     print(f"Need {err.required}, have {err.available}")
 except RateLimitedError as err:

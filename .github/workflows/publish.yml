@@ -14,10 +14,21 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
       - run: npm ci
+
+      - name: Verify version matches tag
+        working-directory: packages/reader-js
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Error: Tag $TAG_VERSION does not match package.json $PKG_VERSION"
+            exit 1
+          fi
+          echo "Version verified: $PKG_VERSION"
 
       - name: Build
         working-directory: packages/reader-js
@@ -39,6 +50,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Verify version matches tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(grep '^version = ' packages/reader-py/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Error: Tag $TAG_VERSION does not match pyproject.toml $PKG_VERSION"
+            exit 1
+          fi
+          echo "Version verified: $PKG_VERSION"
 
       - name: Install build tools
         run: pip install build twine

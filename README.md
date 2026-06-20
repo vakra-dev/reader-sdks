@@ -97,7 +97,7 @@ pytest
 - **API docs:** https://reader.dev/docs
 - **SDK reference:** https://reader.dev/docs/sdk/overview
 - **API reference (OpenAPI):** https://reader.dev/docs/api-reference/read
-- **Dashboard:** https://app.reader.dev
+- **Dashboard:** https://console.reader.dev
 
 ## License
 

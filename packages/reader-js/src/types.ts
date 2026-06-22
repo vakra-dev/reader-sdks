@@ -24,7 +24,7 @@ export interface ReadParams {
   /** Multiple URLs for batch scraping */
   urls?: string[];
   /** Output formats (default: ["markdown"]) */
-  formats?: Array<"markdown" | "html">;
+  formats?: Array<"markdown" | "html" | "screenshot">;
   /** Extract main content only (default: true) */
   onlyMainContent?: boolean;
   /** CSS selectors to include */
@@ -66,6 +66,7 @@ export interface Page {
   url: string;
   markdown?: string;
   html?: string;
+  screenshot?: string;
   statusCode?: number;
   proxyMode?: "standard" | "stealth";
   proxyEscalated?: boolean;
@@ -81,6 +82,7 @@ export interface ScrapeResult {
   finalUrl?: string;
   markdown?: string;
   html?: string;
+  screenshot?: string;
   metadata: ScrapeMetadata;
 }
 

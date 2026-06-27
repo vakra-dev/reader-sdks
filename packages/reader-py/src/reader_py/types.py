@@ -7,8 +7,8 @@ from typing import Annotated, Any, Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 
-ProxyMode = Literal["standard", "stealth", "auto"]
-ResolvedProxyMode = Literal["standard", "stealth"]
+ProxyMode = Literal["standard", "premium"]
+ResolvedProxyMode = Literal["standard", "premium"]
 JobStatus = Literal["queued", "processing", "completed", "failed", "cancelled"]
 JobMode = Literal["scrape", "batch", "crawl"]
 
@@ -45,7 +45,6 @@ class ScrapeMetadata(BaseModel):
     duration: int
     cached: bool
     proxy_mode: Optional[ResolvedProxyMode] = None
-    proxy_escalated: Optional[bool] = None
     scraped_at: str
 
 
@@ -68,7 +67,6 @@ class Page(BaseModel):
     html: Optional[str] = None
     status_code: Optional[int] = None
     proxy_mode: Optional[ResolvedProxyMode] = None
-    proxy_escalated: Optional[bool] = None
     credits: Optional[int] = None
     metadata: Optional[dict[str, Any]] = None
     error: Optional[str] = None

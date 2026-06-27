@@ -89,8 +89,8 @@ class TestReadParams:
         params = ReadParams(urls=["https://a.com", "https://b.com"])
         assert len(params.urls) == 2
 
-    def test_proxy_mode_accepts_all_three(self):
-        for mode in ("standard", "stealth", "auto"):
+    def test_proxy_mode_accepts_both_modes(self):
+        for mode in ("standard", "premium"):
             params = ReadParams(url="https://example.com", proxy_mode=mode)
             assert params.proxy_mode == mode
 
@@ -108,7 +108,6 @@ class TestScrapeResult:
             cached=False,
             scraped_at="2026-04-04T12:00:00Z",
             proxy_mode="standard",
-            proxy_escalated=False,
         )
         result = ScrapeResult(
             url="https://example.com",

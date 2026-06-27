@@ -9,14 +9,12 @@ export interface ReaderClientConfig {
   baseUrl?: string;
   /** Request timeout in ms (default: 60000) */
   timeout?: number;
-  /** Max retries on transient failures (default: 2) */
-  maxRetries?: number;
   /** Extra headers to include in every request (e.g. x-request-id for tracing) */
   headers?: Record<string, string>;
 }
 
-/** Public proxy mode. `auto` picks standard first and escalates to stealth on block. */
-export type ProxyMode = "standard" | "stealth" | "auto";
+/** Public proxy mode. `standard` is fast and affordable; `premium` uses stronger proxies for anti-bot sites. */
+export type ProxyMode = "standard" | "premium";
 
 export interface ReadParams {
   /** Single URL to scrape */
@@ -35,7 +33,7 @@ export interface ReadParams {
   waitForSelector?: string;
   /** Per-URL timeout in ms (default: 30000) */
   timeoutMs?: number;
-  /** Proxy mode: standard, stealth, or auto (default: auto) */
+  /** Proxy mode: standard (default) or premium */
   proxyMode?: ProxyMode;
   /** Max crawl depth (triggers crawl mode) */
   maxDepth?: number;
@@ -55,10 +53,8 @@ export interface ScrapeMetadata {
   statusCode?: number;
   duration: number;
   cached: boolean;
-  /** Resolved proxy mode — `"standard"` or `"stealth"`. Omitted on cache hits. */
-  proxyMode?: "standard" | "stealth";
-  /** True if `auto` escalated from standard to stealth for this page. */
-  proxyEscalated?: boolean;
+  /** Resolved proxy mode — `"standard"` or `"premium"`. Omitted on cache hits. */
+  proxyMode?: "standard" | "premium";
   scrapedAt: string;
 }
 
@@ -68,8 +64,7 @@ export interface Page {
   html?: string;
   screenshot?: string;
   statusCode?: number;
-  proxyMode?: "standard" | "stealth";
-  proxyEscalated?: boolean;
+  proxyMode?: "standard" | "premium";
   credits?: number;
   metadata?: ScrapeMetadata | Record<string, unknown>;
   error?: string;
@@ -132,7 +127,7 @@ export interface UsageEntry {
   duration: number;
   status: "success" | "error";
   cached: boolean;
-  proxyMode: "standard" | "stealth" | null;
+  proxyMode: "standard" | "premium" | null;
   credits: number;
   error: string | null;
   createdAt: string;

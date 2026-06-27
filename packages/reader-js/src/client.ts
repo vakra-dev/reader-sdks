@@ -41,12 +41,10 @@ import {
   toReaderApiError,
   ReaderApiError,
   ScrapeTimeoutError,
-  RateLimitedError,
 } from "./errors.js";
 
 const DEFAULT_BASE_URL = "https://api.reader.dev";
 const DEFAULT_TIMEOUT = 60_000;
-const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_POLL_INTERVAL = 2_000;
 const DEFAULT_POLL_TIMEOUT = 300_000; // 5 minutes
 
@@ -59,7 +57,6 @@ export class ReaderClient {
   private apiKey: string;
   private baseUrl: string;
   private timeout: number;
-  private maxRetries: number;
   private extraHeaders: Record<string, string>;
   private _sessions: SessionsAPI | null = null;
 
@@ -70,7 +67,6 @@ export class ReaderClient {
     this.apiKey = config.apiKey;
     this.baseUrl = (config.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, "");
     this.timeout = config.timeout || DEFAULT_TIMEOUT;
-    this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.extraHeaders = config.headers || {};
   }
 
@@ -301,87 +297,57 @@ export class ReaderClient {
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const url = path.startsWith("http") ? path : `${this.baseUrl}${path}`;
-    let lastError: Error | null = null;
 
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-        const res = await fetch(url, {
-          method,
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": this.apiKey,
-            ...this.extraHeaders,
-          },
-          body: body ? JSON.stringify(body) : undefined,
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        const requestId = res.headers.get("x-request-id") ?? undefined;
-        const parsed = (await res.json().catch(() => null)) as
-          | SuccessEnvelope<unknown>
-          | PaginatedEnvelope<unknown>
-          | ErrorEnvelope
-          | null;
-
-        if (!res.ok) {
-          if (parsed && "error" in parsed && parsed.error) {
-            const err = toReaderApiError(parsed.error, res.status, requestId);
-
-            // Don't retry client errors except 429
-            if (res.status < 500 && res.status !== 429) throw err;
-
-            // Honor Retry-After from the rate-limited response
-            if (err instanceof RateLimitedError && err.retryAfterSeconds) {
-              await sleep(err.retryAfterSeconds * 1000);
-            }
-
-            lastError = err;
-          } else {
-            const genericErr = new ReaderApiError(
-              {
-                code: "internal_error",
-                message: `Request failed with status ${res.status}`,
-              },
-              res.status,
-              requestId,
-            );
-            if (res.status < 500) throw genericErr;
-            lastError = genericErr;
-          }
-        } else {
-          return parsed as unknown as T;
-        }
-      } catch (err) {
-        if (err instanceof ReaderApiError) {
-          if (err.httpStatus < 500 && err.httpStatus !== 429) throw err;
-          lastError = err;
-        } else if (err instanceof Error) {
-          if (err.name === "AbortError") {
-            lastError = new ReaderApiError(
-              { code: "scrape_timeout", message: "Request timed out" },
-              504,
-            );
-          } else {
-            lastError = err;
-          }
-        }
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.apiKey,
+          ...this.extraHeaders,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new ReaderApiError(
+          { code: "scrape_timeout", message: "Request timed out" },
+          504,
+        );
       }
-
-      // Exponential backoff before retry
-      if (attempt < this.maxRetries) {
-        await sleep(Math.pow(2, attempt) * 1000);
-      }
+      throw err;
     }
 
-    throw (
-      lastError ??
-      new ReaderApiError({ code: "internal_error", message: "Request failed" }, 500)
-    );
+    clearTimeout(timeoutId);
+
+    const requestId = res.headers.get("x-request-id") ?? undefined;
+    const parsed = (await res.json().catch(() => null)) as
+      | SuccessEnvelope<unknown>
+      | PaginatedEnvelope<unknown>
+      | ErrorEnvelope
+      | null;
+
+    if (!res.ok) {
+      if (parsed && "error" in parsed && parsed.error) {
+        throw toReaderApiError(parsed.error, res.status, requestId);
+      }
+      throw new ReaderApiError(
+        {
+          code: "internal_error",
+          message: `Request failed with status ${res.status}`,
+        },
+        res.status,
+        requestId,
+      );
+    }
+
+    return parsed as unknown as T;
   }
 }
 

@@ -79,7 +79,6 @@ describe("ReaderClient", () => {
               duration: 123,
               cached: false,
               proxyMode: "standard",
-              proxyEscalated: false,
               scrapedAt: "2026-04-04T12:00:00Z",
             },
           },
@@ -319,48 +318,6 @@ describe("ReaderClient", () => {
       expect(calls).toBe(1);
     });
 
-    it("retries transient 5xx errors with exponential backoff", async () => {
-      let calls = 0;
-      global.fetch = vi.fn().mockImplementation(() => {
-        calls++;
-        if (calls <= 2) {
-          return Promise.resolve(
-            mockJson(
-              {
-                success: false,
-                error: {
-                  code: "upstream_unavailable",
-                  message: "try again",
-                  docsUrl: "https://reader.dev/docs/home/concepts/errors#upstream-unavailable",
-                },
-              },
-              { status: 502 },
-            ),
-          );
-        }
-        return Promise.resolve(
-          mockJson({
-            success: true,
-            data: {
-              url: "https://example.com",
-              markdown: "ok",
-              metadata: {
-                duration: 100,
-                cached: false,
-                scrapedAt: "2026-04-04T12:00:00Z",
-              },
-            },
-          }),
-        );
-      });
-
-      const client = new ReaderClient({ apiKey: "rdr_test", maxRetries: 2 });
-      const result = await client.read({ url: "https://example.com" });
-
-      expect(calls).toBe(3);
-      expect(result.kind).toBe("scrape");
-    }, 15000);
-
     it("surfaces request ID from the x-request-id header on errors", async () => {
       global.fetch = vi.fn().mockResolvedValue(
         mockJson(
@@ -376,7 +333,7 @@ describe("ReaderClient", () => {
         ),
       );
 
-      const client = new ReaderClient({ apiKey: "rdr_test", maxRetries: 0 });
+      const client = new ReaderClient({ apiKey: "rdr_test" });
       try {
         await client.read({ url: "https://example.com" });
         throw new Error("should have thrown");

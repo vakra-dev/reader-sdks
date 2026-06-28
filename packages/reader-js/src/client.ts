@@ -46,7 +46,7 @@ import {
 const DEFAULT_BASE_URL = "https://api.reader.dev";
 const DEFAULT_TIMEOUT = 60_000;
 const DEFAULT_POLL_INTERVAL = 2_000;
-const DEFAULT_POLL_TIMEOUT = 300_000; // 5 minutes
+const DEFAULT_POLL_TIMEOUT = 600_000; // 10 minutes
 
 interface JobWithPagination {
   data: Job;
@@ -114,7 +114,9 @@ export class ReaderClient {
       !("metadata" in data)
     ) {
       const jobId = String((data as { id: unknown }).id);
-      const job = await this.waitForJob(jobId);
+      const job = await this.waitForJob(jobId, {
+        timeout: params.pollTimeout,
+      });
       return { kind: "job", data: job };
     }
 

@@ -45,6 +45,8 @@ export interface ReadParams {
   webhook?: { url: string; events?: string[]; secret?: string };
   /** Batch concurrency override */
   batchConcurrency?: number;
+  /** Polling timeout for async jobs in ms (default: 600000) */
+  pollTimeout?: number;
 }
 
 export interface ScrapeMetadata {
